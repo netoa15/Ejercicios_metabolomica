@@ -1,0 +1,111 @@
+---
+title: "Volcano Grafica_Jose Ernesto Arriaza"
+output: html_document
+date: "2025-02-26"
+---
+
+Instalar y correr paqueteria
+
+```{r}
+install.packages("pacman")
+library("pacman")
+
+p_load("readr","dplyr","ggplot2","ggrepel","matrixTests")
+```
+
+```{r}
+PCR <- read.csv(file="https://raw.githubusercontent.com/ManuelLaraMVZ/Transcript-mica/main/datos_miRNAs.csv")
+
+PCR
+```
+
+Asilar el control y seleccionar solo a U6
+
+```{r}
+Gen_ref <- PCR %>% 
+  filter(Condicion=="Control") %>% 
+  select(-2)
+
+Gen_ref
+```
+
+```{r}
+Gen_int <- PCR %>% 
+  filter(Condicion=="Target") %>% 
+  select(-2)
+
+Gen_int
+```
+Correr los promedios de cada columna de los genes control
+```{r}
+meanCx1 <- mean(Gen_ref$Cx1)
+meanCx2 <- mean(Gen_ref$Cx2)
+meanCx3 <- mean(Gen_ref$Cx3)
+meanT1 <- mean(Gen_ref$T1)
+meanT2 <- mean(Gen_ref$T2)
+meanT3 <- mean(Gen_ref$T3)
+```
+
+Sacar el Delta Ct de cada columna de los genes de interes
+```{r}
+DCt <- Gen_int %>% 
+  mutate(DCT_Cx1=Cx1-meanCx1,
+         DCT_Cx2=Cx2-meanCx2,
+         DCT_Cx3=Cx3-meanCx3,
+         DCT_T1=T1-meanT1,
+         DCT_T2=T2-meanT2,
+         DCT_T3=T3-meanT3) %>% 
+  select(-2,-3,-4,-5,-6,-7)
+
+DCt
+  
+```
+
+Dos Delta Ct
+```{r}
+DosDCt <- DCt %>% 
+  mutate(A=2^-(DCT_Cx1), B=2^-(DCT_Cx2),
+         C=2^-(DCT_Cx3), D=2^-(DCT_T1),
+         E=2^-(DCT_T2), F=2^-(DCT_T3)) %>% 
+  select(-2:-7)
+DosDCt
+```
+
+Estadística para obtener los valores de p, hacemos T de Studet.
+
+```{r}
+tStudent <- row_t_welch(DosDCt[,c("A","B","C")],
+                        DosDCt[,c("D","E","F")])
+tStudent
+```
+
+Recuperar el valor de P para cada gen
+
+```{r}
+PValue <- DosDCt %>% 
+  mutate(PV=tStudent$pvalue,
+         LPV=-log10(PV)) %>% 
+  select(1,"PV","LPV")
+PValue
+
+
+```
+
+Obtener el valor de Dos Delta Delta CT
+```{r}
+DosDDCt <- DosDCt %>% 
+  mutate(mean_DosDCt_Cx=(A+B+C)/3,
+         mean_DosDCt_Tx=(D+E+F)/3,
+         DosDDCt=mean_DosDCt_Tx/mean_DosDCt_Cx,
+         L2DDCt=log2(DosDDCt))%>% #para la gráfica necesito el log2 de DosDDCt 
+           select(-2:-7)
+         DosDDCt
+```
+
+Gráfica
+```{r}
+V_plot <- ggplot(mapping = aes(x=DosDDCt$L2DDCt,
+                               y=PValue$LPV))+
+  geom_point()
+V_plot
+```
