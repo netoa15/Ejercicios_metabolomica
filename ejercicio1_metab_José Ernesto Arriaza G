@@ -1,0 +1,34 @@
+---
+title: "ExamenMidT_Ejercicio1"
+author: "José Ernesto Arriaza Godoy"
+date: "2025-03-05"
+output: html_document
+---
+
+```{r}
+Columna_A <- c("Gran Danes","Criollo","Cocker","Labrador","Huskey")
+Columna_B <- c("3","5","3","6","8")
+Columna_C <- c(3,4.5,4,7,5)
+```
+
+```{r}
+Raza_perros <- data.frame("Raza"=Columna_A,
+                          "Total de perros"=Columna_B,
+                          "Edad promedio"=Columna_C)
+View(Raza_perros)
+```
+
+```{r}
+Mean_TotalPerros <- Raza_perros %>% 
+  mutate(Prom_total=(3+5+3+6+8)/5) %>% 
+  select("Total perros")
+Mean_TotalPerros
+```
+
+```{r}
+Mean_EdadPromedio <- Raza_perros %>% 
+  mutate(Prom_EdadPromedio=(3+4.5+4+7+5)/5) %>% 
+  select("Total perros")
+Mean_EdadPromedio
+```
+
